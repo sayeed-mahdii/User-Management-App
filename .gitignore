@@ -1,0 +1,20 @@
+# Environment variables & secrets (NEVER COMMIT)
+.env
+.env.*
+!.env.example
+
+# Build outputs
+bin/
+obj/
+publish/
+*.zip
+
+# Visual Studio & IDE files
+.vs/
+.vscode/
+*.user
+*.suo
+
+# OS generated files
+.DS_Store
+Thumbs.db

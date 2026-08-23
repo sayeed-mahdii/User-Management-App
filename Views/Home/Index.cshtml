@@ -1,0 +1,358 @@
+@model List<UserManagement.Models.User>
+
+@{
+    ViewData["Title"] = "User Management";
+}
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+        
+        <!-- Status / Alert Message Container (No browser alerts as requested) -->
+        <div id="statusAlertContainer"></div>
+
+        <!-- Toolbar & Filter Area -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+            <!-- Action Toolbar (Requirement #2 & #4) -->
+            <div class="btn-toolbar gap-2" role="toolbar" aria-label="User Management Toolbar">
+                <!-- Block Button (with text as per requirement) -->
+                <button type="button" id="btnBlock" class="btn btn-warning btn-sm d-flex align-items-center gap-1" data-bs-toggle="tooltip" data-bs-placement="top" title="Block selected users" disabled>
+                    <i class="bi bi-lock-fill"></i>
+                    <span>Block</span>
+                </button>
+
+                <!-- Unblock Button (icon as per requirement) -->
+                <button type="button" id="btnUnblock" class="btn btn-outline-success btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Unblock selected users" disabled>
+                    <i class="bi bi-unlock-fill"></i>
+                </button>
+
+                <!-- Delete Button (icon as per requirement) -->
+                <button type="button" id="btnDelete" class="btn btn-outline-danger btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete selected users permanently" disabled>
+                    <i class="bi bi-trash-fill"></i>
+                </button>
+
+                <!-- Delete Unverified Button (icon as per requirement) -->
+                <button type="button" id="btnDeleteUnverified" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete all unverified users">
+                    <i class="bi bi-person-x-fill"></i>
+                </button>
+            </div>
+
+            <!-- Filter / Search box (Shown in screenshot) -->
+            <div class="d-flex align-items-center">
+                <div class="input-group input-group-sm" style="width: 250px;">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" id="tableFilter" class="form-control border-start-0 ps-0" placeholder="Filter users..." aria-label="Filter" />
+                </div>
+            </div>
+        </div>
+
+        <!-- User Management Table (Requirement #2, #3, #4) -->
+        <div class="table-responsive">
+            <table class="table table-hover table-striped align-middle mb-0" id="usersTable">
+                <thead class="table-light">
+                    <tr>
+                        <!-- Leftmost column: Checkbox without label (Select/Deselect All) -->
+                        <th style="width: 40px;" class="text-center">
+                            <input class="form-check-input" type="checkbox" id="selectAllCheckbox" aria-label="Select all rows" />
+                        </th>
+                        <th class="sortable-th user-select-none" style="cursor: pointer;" data-col="1">
+                            Name <i class="bi bi-arrow-down-up text-muted small ms-1"></i>
+                        </th>
+                        <th class="sortable-th user-select-none" style="cursor: pointer;" data-col="2">
+                            Email <i class="bi bi-arrow-down-up text-muted small ms-1"></i>
+                        </th>
+                        <th class="sortable-th user-select-none" style="cursor: pointer;" data-col="3">
+                            Status <i class="bi bi-arrow-down-up text-muted small ms-1"></i>
+                        </th>
+                        <th class="sortable-th user-select-none" style="cursor: pointer;" data-col="4">
+                            Last Seen <i class="bi bi-arrow-down-up text-muted small ms-1"></i>
+                        </th>
+                        <th class="sortable-th user-select-none" style="cursor: pointer;" data-col="5">
+                            Registered <i class="bi bi-arrow-down-up text-muted small ms-1"></i>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model == null || Model.Count == 0)
+                    {
+                        <tr id="noRecordsRow">
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                <i class="bi bi-people fs-2 d-block mb-2"></i>
+                                No users found.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var user in Model)
+                        {
+                            <tr data-user-id="@user.Id" class="@(user.Status == "Blocked" ? "table-secondary text-muted" : "")">
+                                <!-- Row Checkbox without label -->
+                                <td class="text-center">
+                                    <input class="form-check-input user-checkbox" type="checkbox" value="@user.Id" aria-label="Select user @user.Name" />
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">@user.Name</div>
+                                </td>
+                                <td>
+                                    <span class="text-muted">@user.Email</span>
+                                </td>
+                                <td>
+                                    @if (user.Status == "Active")
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                            <i class="bi bi-check-circle me-1"></i> Active
+                                        </span>
+                                    }
+                                    else if (user.Status == "Unverified")
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                                            <i class="bi bi-clock-history me-1"></i> Unverified
+                                        </span>
+                                    }
+                                    else if (user.Status == "Blocked")
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                            <i class="bi bi-slash-circle me-1"></i> Blocked
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">@user.Status</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (user.LastLoginTime.HasValue)
+                                    {
+                                        <span data-bs-toggle="tooltip" title="@user.LastLoginTime.Value.ToString("yyyy-MM-dd HH:mm:ss") UTC" data-timestamp="@user.LastLoginTime.Value.Ticks">
+                                            @user.LastLoginTime.Value.ToString("MMM dd, yyyy HH:mm")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted fst-italic" data-timestamp="0">Never</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="text-muted small" data-bs-toggle="tooltip" title="@user.RegistrationTime.ToString("yyyy-MM-dd HH:mm:ss") UTC" data-timestamp="@user.RegistrationTime.Ticks">
+                                        @user.RegistrationTime.ToString("MMM dd, yyyy")
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 1. Initialize Bootstrap Tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        const userCheckboxes = document.querySelectorAll('.user-checkbox');
+        const btnBlock = document.getElementById('btnBlock');
+        const btnUnblock = document.getElementById('btnUnblock');
+        const btnDelete = document.getElementById('btnDelete');
+        const btnDeleteUnverified = document.getElementById('btnDeleteUnverified');
+        const tableFilter = document.getElementById('tableFilter');
+        const alertContainer = document.getElementById('statusAlertContainer');
+
+        // 2. Function to show status messages in UI (No browser alert popups)
+        function showStatusMessage(message, type = 'success') {
+            alertContainer.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show shadow-sm" role="alert">
+                    <i class="bi ${type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'} me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+        }
+
+        // 3. Update Toolbar button states based on selection
+        function updateToolbarState() {
+            const selectedCount = document.querySelectorAll('.user-checkbox:checked').length;
+            const hasSelection = selectedCount > 0;
+
+            btnBlock.disabled = !hasSelection;
+            btnUnblock.disabled = !hasSelection;
+            btnDelete.disabled = !hasSelection;
+
+            // Update indeterminate state on header checkbox
+            if (userCheckboxes.length > 0) {
+                if (selectedCount === userCheckboxes.length) {
+                    selectAllCheckbox.checked = true;
+                    selectAllCheckbox.indeterminate = false;
+                } else if (selectedCount > 0) {
+                    selectAllCheckbox.checked = false;
+                    selectAllCheckbox.indeterminate = true;
+                } else {
+                    selectAllCheckbox.checked = false;
+                    selectAllCheckbox.indeterminate = false;
+                }
+            }
+        }
+
+        // 4. Header Checkbox: Select / Deselect All
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function () {
+                const isChecked = this.checked;
+                userCheckboxes.forEach(cb => {
+                    // Only select rows that are visible after filter
+                    if (cb.closest('tr').style.display !== 'none') {
+                        cb.checked = isChecked;
+                    }
+                });
+                updateToolbarState();
+            });
+        }
+
+        // 5. Individual Checkbox changes
+        userCheckboxes.forEach(cb => {
+            cb.addEventListener('change', updateToolbarState);
+        });
+
+        // 6. Filter / Search functionality
+        if (tableFilter) {
+            tableFilter.addEventListener('keyup', function () {
+                const query = this.value.toLowerCase();
+                const rows = document.querySelectorAll('#usersTable tbody tr:not(#noRecordsRow)');
+                rows.forEach(row => {
+                    const text = row.innerText.toLowerCase();
+                    row.style.display = text.includes(query) ? '' : 'none';
+                });
+            });
+        }
+
+        // 7. Interactive Column Sorting (Sensible order adjustable by end-users)
+        let sortDirections = {};
+        document.querySelectorAll('.sortable-th').forEach(header => {
+            header.addEventListener('click', function () {
+                const colIndex = parseInt(this.getAttribute('data-col'));
+                const currentDir = sortDirections[colIndex] || 'desc';
+                const nextDir = currentDir === 'asc' ? 'desc' : 'asc';
+                sortDirections[colIndex] = nextDir;
+
+                // Reset all header icons
+                document.querySelectorAll('.sortable-th i').forEach(icon => {
+                    icon.className = 'bi bi-arrow-down-up text-muted small ms-1';
+                });
+
+                // Update current header icon
+                const icon = this.querySelector('i');
+                if (icon) {
+                    icon.className = nextDir === 'asc' ? 'bi bi-sort-up text-primary small ms-1' : 'bi bi-sort-down text-primary small ms-1';
+                }
+
+                const tbody = document.querySelector('#usersTable tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr:not(#noRecordsRow)'));
+
+                rows.sort((a, b) => {
+                    let cellA = a.children[colIndex];
+                    let cellB = b.children[colIndex];
+                    let valA = cellA.querySelector('[data-timestamp]') ? parseInt(cellA.querySelector('[data-timestamp]').getAttribute('data-timestamp')) : cellA.innerText.trim();
+                    let valB = cellB.querySelector('[data-timestamp]') ? parseInt(cellB.querySelector('[data-timestamp]').getAttribute('data-timestamp')) : cellB.innerText.trim();
+
+                    if (typeof valA === 'number' && typeof valB === 'number') {
+                        return nextDir === 'asc' ? valA - valB : valB - valA;
+                    }
+
+                    return nextDir === 'asc' 
+                        ? valA.toString().localeCompare(valB.toString()) 
+                        : valB.toString().localeCompare(valA.toString());
+                });
+
+                rows.forEach(row => tbody.appendChild(row));
+            });
+        });
+
+        // 8. Get Selected User IDs
+        function getSelectedUserIds() {
+            const selected = [];
+            document.querySelectorAll('.user-checkbox:checked').forEach(cb => {
+                selected.push(parseInt(cb.value));
+            });
+            return selected;
+        }
+
+        // 9. Execute Toolbar Batch Action
+        function executeAction(actionName) {
+            const userIds = getSelectedUserIds();
+            if (actionName !== 'deleteunverified' && userIds.length === 0) {
+                showStatusMessage('Please select at least one user.', 'warning');
+                return;
+            }
+
+            const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+            const token = tokenInput ? tokenInput.value : '';
+
+            // Disable buttons during request
+            btnBlock.disabled = true;
+            btnUnblock.disabled = true;
+            btnDelete.disabled = true;
+            btnDeleteUnverified.disabled = true;
+
+            fetch('/Home/ExecuteAction', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    userIds: userIds,
+                    action: actionName
+                })
+            })
+            .then(res => {
+                if (res.status === 401) {
+                    // Current user was blocked/deleted (Requirement #5) -> redirect to login
+                    window.location.href = '/login?reason=blocked';
+                    return null;
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (!data) return;
+
+                if (data.success) {
+                    if (data.currentAffected) {
+                        // User modified their own status or deleted themselves
+                        window.location.href = '/login?reason=blocked';
+                        return;
+                    }
+                    showStatusMessage(data.message, 'success');
+                    // Reload table seamlessly after small delay to show message
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 600);
+                } else {
+                    showStatusMessage(data.message || 'Operation failed.', 'danger');
+                    updateToolbarState();
+                    btnDeleteUnverified.disabled = false;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showStatusMessage('An error occurred while processing the request.', 'danger');
+                updateToolbarState();
+                btnDeleteUnverified.disabled = false;
+            });
+        }
+
+        // 10. Attach click events to toolbar buttons
+        btnBlock.addEventListener('click', () => executeAction('block'));
+        btnUnblock.addEventListener('click', () => executeAction('unblock'));
+        btnDelete.addEventListener('click', () => executeAction('delete'));
+        btnDeleteUnverified.addEventListener('click', () => executeAction('deleteunverified'));
+    });
+</script>
+}
