@@ -1,0 +1,5 @@
+# GitHub Linguist language overrides
+*.cshtml linguist-language=C#
+
+# Vendor directories (exclude from language statistics)
+wwwroot/lib/** linguist-vendored

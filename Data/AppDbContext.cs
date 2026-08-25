@@ -17,7 +17,7 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Create a UNIQUE INDEX on the Email column at database level
+        // Create an UNIQUE INDEX on the Email column at database level
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Email)
             .IsUnique();
