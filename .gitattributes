@@ -1,3 +1,4 @@
 # Exclude Razor views and static assets from GitHub language statistics
 *.cshtml linguist-detectable=false
+*.html linguist-detectable=false
 wwwroot/** linguist-vendored
